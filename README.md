@@ -1,3 +1,5 @@
+This is a fork of geerllingguy.haproxy and modeled at our use case.
+
 # Ansible Role: HAProxy
 
 [![Build Status](https://travis-ci.org/geerlingguy/ansible-role-haproxy.svg?branch=master)](https://travis-ci.org/geerlingguy/ansible-role-haproxy)
@@ -41,13 +43,27 @@ HAProxy frontend configuration directives.
 
 HAProxy backend configuration directives.
 
-    haproxy_backend_servers:
-      - name: app1
-        address: 192.168.0.1:80
-      - name: app2
-        address: 192.168.0.2:80
+    sites:
+        app:
+            name: super_app
+            frontend: 
+                url: super_app.com
+            backend:
+                port: 80
+                urls:
+                    - back1.super_app.com
+                    - back2.super_app.com
+        api:
+            name: api
+            frontend: 
+                url: another_super_app.com
+            backend:
+                port: 80
+                urls:
+                    - back1.another_super_app.com
+                    - back2.another_super_app.com
 
-A list of backend servers (name and address) to which HAProxy will distribute requests.
+A tree of websites with above variables.
 
     haproxy_global_vars:
       - 'ssl-default-bind-ciphers ABCD+KLMJ:...'

@@ -47,24 +47,24 @@ frontend {{ haproxy_frontend_name }}
   mode {{ haproxy_frontend_mode }}
 
   {% for site in sites %}
-  acl {{ sites[site]['name'] }} hdr(host) -i {{ sites[site].main_url }}
+  acl {{ sites[site].name }} hdr(host) -i {{ sites[site].frontend.url }}
   {% endfor %}
 
   {% for site in sites %}
-  use_backend {{ sites[site]['name'] }}-backend if {{ sites[site]['name'] }}
+  use_backend {{ sites[site].name }}-backend if {{ sites[site].name }}
   {% endfor %}
 
   default_backend {{ haproxy_backend_name }}
 
 {% for site in sites %}
-backend {{ sites[site]['name'] }}-backend
+backend {{ sites[site].name }}-backend
   mode http
   balance roundrobin
   option forwardfor
   option httpchk HEAD / HTTP/1.1\r\nHost:localhost
 
-  {% for url in sites[site]['backend']['urls'] %}
-  server {{ sites[site]['name'] }}{{ loop.index }} {{ url }}:{{ sites[site]['backend']['port'] }} cookie {{ sites[site]['name'] }}{{ loop.index }} check
+  {% for url in sites[site].backend.urls %}
+  server {{ sites[site].name }}{{ loop.index }} {{ url }}:{{ sites[site].backend.port }} cookie {{ sites[site].name }}{{ loop.index }} check
   {% endfor %}
 
 {% endfor %}
