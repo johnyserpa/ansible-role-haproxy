@@ -1,6 +1,11 @@
 ---
 - name: Ensure HAProxy is installed.
-  package: name=haproxy state=present
+  yum: 
+    name: "{{ item }}" 
+    state: present
+  with_items:
+    - haproxy
+    - socat
 
 - name: Ensure HAProxy is enabled (so init script will start it on Debian).
   lineinfile:
@@ -29,4 +34,7 @@
   notify: restart haproxy
 
 - name: Ensure HAProxy is started and enabled on boot.
-  service: name=haproxy state=started enabled=yes
+  service: 
+    name: haproxy
+    state: started
+    enabled: yes

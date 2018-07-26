@@ -20,13 +20,13 @@ defaults
   option  httplog
   option  dontlognull
 {% if haproxy_version == '1.4' %}
-        contimeout 5000
-        clitimeout 50000
-        srvtimeout 50000
+    contimeout 5000
+    clitimeout 50000
+    srvtimeout 50000
 {% else %}
-        timeout connect 5000
-        timeout client 50000
-        timeout server 50000
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
 {% endif %}
 {% if ansible_os_family == 'Debian' %}
   errorfile 400 /etc/haproxy/errors/400.http
@@ -37,20 +37,34 @@ defaults
   errorfile 503 /etc/haproxy/errors/503.http
   errorfile 504 /etc/haproxy/errors/504.http
 {% endif %}
+  
+  stats enable
+  stats uri /haproxy?stats
+
 
 frontend {{ haproxy_frontend_name }}
-    bind {{ haproxy_frontend_bind_address }}:{{ haproxy_frontend_port }}
-    mode {{ haproxy_frontend_mode }}
-    default_backend {{ haproxy_backend_name }}
+  bind {{ haproxy_frontend_bind_address }}:{{ haproxy_frontend_port }}
+  mode {{ haproxy_frontend_mode }}
 
-backend {{ haproxy_backend_name }}
-    mode {{ haproxy_backend_mode }}
-    balance {{ haproxy_backend_balance_method }}
-    option forwardfor
-{% if haproxy_backend_httpchk != '' %}
-    option httpchk {{ haproxy_backend_httpchk }}
-{% endif %}
-    cookie SERVERID insert indirect
-{% for backend in haproxy_backend_servers %}
-    server {{ backend.name }} {{ backend.address }} cookie {{ backend.name }} check
+  {% for site in sites %}
+  acl {{ sites[site]['name'] }} hdr(host) -i {{ sites[site].main_url }}
+  {% endfor %}
+
+  {% for site in sites %}
+  use_backend {{ sites[site]['name'] }}-backend if {{ sites[site]['name'] }}
+  {% endfor %}
+
+  default_backend {{ haproxy_backend_name }}
+
+{% for site in sites %}
+backend {{ sites[site]['name'] }}-backend
+  mode http
+  balance roundrobin
+  option forwardfor
+  option httpchk HEAD / HTTP/1.1\r\nHost:localhost
+
+  {% for url in sites[site]['backend']['urls'] %}
+  server {{ sites[site]['name'] }}{{ loop.index }} {{ url }}:{{ sites[site]['backend']['port'] }} cookie {{ sites[site]['name'] }}{{ loop.index }} check
+  {% endfor %}
+
 {% endfor %}
